@@ -2,7 +2,7 @@
 
 # Used packages
 packages = c("shiny", "shinydashboard", "tidyverse", "plotly", "dplyr","DT",
-            "zoo", "quantmod", "tidyquant", "readr","plotly","ggplot2","bizdays", "lubridate")
+            "zoo", "quantmod", "readr","ggplot2","bizdays", "lubridate")
 
 # Run the following command to verify that the required packages are installed. If some package
 # is missing, it will be installed automatically

@@ -1,25 +1,5 @@
 #Global:
 
-#Shiny
-library(shiny)
-library(shinydashboard)
-#Data manipulation
-library(tidyverse)
-library(dplyr)
-library(DT)
-library(zoo)
-#Finance data:
-library(quantmod)
-# Modeling
-library(tidyquant)
-#Data import:
-library(readr)
-#Data viz:
-library(plotly)
-library(ggplot2)
-#Calendar:
-library(bizdays)
-
 #Get symbols:
 source("global.R")
 

@@ -1,12 +1,18 @@
-#Update:
-library(tidyverse)
-library(dplyr)
-library(DT)
-library(zoo)
-#Finance data:
-library(quantmod)
-# Modeling
-library(tidyquant)
+#Update
+
+# Used packages
+packages = c("shiny", "shinydashboard", "tidyverse", "plotly", "dplyr","DT",
+             "zoo", "quantmod", "readr","ggplot2","bizdays", "lubridate")
+
+# Run the following command to verify that the required packages are installed. If some package
+# is missing, it will be installed automatically
+package.check <- lapply(packages, FUN = function(x) {
+  if (!require(x, character.only = TRUE)) {
+    install.packages(x, dependencies = TRUE)
+  }
+})
+
+# Load time_series:
 load("data/time_series.RData")
 symbols = data.frame(read_csv("tickers.csv"))
 
