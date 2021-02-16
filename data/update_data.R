@@ -8,39 +8,48 @@ library(quantmod)
 # Modeling
 library(tidyquant)
 load("data/time_series.RData")
-symbols = data.frame(read_csv("tickers/tickers.csv"))
+symbols = data.frame(read_csv("tickers.csv"))
 
-company = "BNP Paribas"
-
-for (company in symbols$Company){
+#Update function
+update = function(company){
+  # company = "Danone"
   
+  print(paste(company, "updating..."))
   
   #Get ticker
   ticker = as.character(symbols[symbols$Company == company,]$Ticker)
+  ticker_clean = paste(str_extract_all(ticker, "[A-Z.0-9]")[[1]],collapse="")
   #Load existing data
   data = as.data.frame(time_series[[company]])
   #Get last_update date
   last_update = as.Date(time_series[["last_update"]])
   #Today's date
   today = Sys.Date()
-  
+  try(
   if (last_update < today){
-    #Data to promote 
-    to_promote = getSymbols(ticker, scr = "yahoo", from = last_update, to = today) %>% get()
     #Last existing date
-    last_date = rownames(data)[nrow(data)]
-    #Promote only new data
-    to_promote = to_promote %>% filter(rownames(to_promote) != last_date)
+    last_date = as.Date(rownames(data)[nrow(data)])
+    
+    #Data to promote 
+    getSymbols(ticker, scr = "yahoo", from = last_date-30, to = today)
+    to_promote = get(ticker_clean)
+    
+    #As a dataframe
+    to_promote = as.data.frame(to_promote)
+    
+    #Getting last data
+    data = data[!((rownames(data) %in% rownames(to_promote)) | (rownames(data) == today)),]
+    
     #Appending rows
     data = rbind(data, to_promote)
-  }
-  
+  }, silent = TRUE
+  )
   #Getting last quote
   to_update = getQuote(ticker) %>% select("Trade Time", "Last", "Open", "High", "Low", "Volume")
-  colnames(to_update) = c("Date", paste(ticker,".Close",sep = ""), paste(ticker,".Open",sep = ""), paste(ticker,".High",sep = ""), paste(ticker,".Low",sep = ""), paste(ticker,".Volume",sep = ""))
+  colnames(to_update) = c("Date", paste(ticker_clean,".Close",sep = ""), paste(ticker_clean,".Open",sep = ""), paste(ticker_clean,".High",sep = ""), paste(ticker_clean,".Low",sep = ""), paste(ticker_clean,".Volume",sep = ""))
   rownames(to_update) = as.Date(to_update %>% pull(Date) %>% first())
   to_update = to_update %>% select(-Date)
-  to_update[,paste(ticker,".Adjusted", sep = "")] = to_update[,paste(ticker,".Close", sep = "")]
+  to_update[,paste(ticker_clean,".Adjusted", sep = "")] = to_update[,paste(ticker_clean,".Close", sep = "")]
   to_update = to_update %>% select(colnames(data))
   
   #Last quote's date
@@ -49,12 +58,25 @@ for (company in symbols$Company){
   #Updating or appending row depending on the date
   if (rownames(data)[nrow(data)] == last_quote){
     data[nrow(data),] = to_update[1,]
-  } else {
+  } else if (rownames(data)[nrow(data)] < last_quote){
     data = rbind(data, to_update)  
   }
   
-  #Update data
-  time_series[[company]] = as.xts(data)
+  data = data %>% distinct()
+  
+  return(data)
 }
+
+#Looping over all companies in symbols csv:
+for (company in symbols$Company){
+  
+  data = try(update(company))
+  
+  #Update data
+  time_series[[company]] = data
+
+}
+
+time_series[["last_update"]] = Sys.Date()
 save(time_series, file = "data/time_series.RData")
 rm(list = ls())

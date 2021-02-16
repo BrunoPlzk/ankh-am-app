@@ -1,30 +1,24 @@
 #Server:
 
-#Shiny
-library(shiny)
-library(shinydashboard)
-# #Deeplearning
-# library(reticulate)
-# library(tensorflow)
-# library(keras)
-#Data manipulation
-library(tidyverse)
-library(dplyr)
-library(DT)
-library(zoo)
-#Finance data:
-library(quantmod)
-# Modeling
-library(tidyquant)
-#Data import:
-library(readr)
-#Data viz:
-library(plotly)
-library(ggplot2)
-#Calendar:
-library(bizdays)
-
 shinyServer(function(input, output, session) {
+    
+    ######### Dropdown Menu ###########
+    output$NotificationMenu = renderMenu({
+        notif <- apply(df_notif, 1, function(row) {
+            notificationItem(text = HTML(paste("<strong>",row[["company"]],
+                                               "</strong>", "signal:","<strong>",
+                                               row[["Recommendation"]],"</strong>")),
+                             icon = icon(row[["icon"]]),
+                             status = row[["status"]]
+                             )
+                             
+        })
+    
+        # This is equivalent to calling:
+        #   dropdownMenu(type="messages", msgs[[1]], msgs[[2]], ...)
+        dropdownMenu(type = "notifications", .list = notif)
+    })
+        
     
     ######### Reactive data ###########
     
@@ -46,7 +40,7 @@ shinyServer(function(input, output, session) {
     
     tech_data = reactive({
         company = input$company
-        df = func_tech_data(raw_data(), company)
+        df = func_tech_data(raw_data())
         
         #Return
         df
@@ -97,7 +91,7 @@ shinyServer(function(input, output, session) {
                                  end   = max)
             updateDateRangeInput(session, "RangeDateTech",
                                  label = paste("Select date range :"),      
-                                 min   = min,
+                                 min   = max-90,
                                  max   = max)
         } else {
             updateDateRangeInput(session, "RangeDateTech",
@@ -106,11 +100,37 @@ shinyServer(function(input, output, session) {
                                  max   = max)
             updateDateRangeInput(session, "RangeDateTech",
                                  label = paste("Select date range :"),
-                                 start   = min,
+                                 start   = max-90,
                                  end   = max)
         }
         
     })
+    
+    # Observe optimal values for bbands:
+    
+    observeEvent(data(),{
+         
+      company = input$company
+      
+      MA_opt = df_opt[company, "MA_opt"]  
+      SD_opt = df_opt[company, "SD_opt"] 
+        
+      updateNumericInput(session,
+                         "nMA_bbands",
+                         label = "Number of periods for moving average:",
+                         min = 1,
+                         max = 100,
+                         value = MA_opt)
+      
+      updateNumericInput(session,
+                         "nSD_bbands",
+                         label = "Number of standard deviations to use:",
+                         min = 1,
+                         max = 100,
+                         value = SD_opt)
+      
+    })
+    
     
     ### Predictive data ####
     
@@ -349,6 +369,28 @@ shinyServer(function(input, output, session) {
         
         func_plot_boolinger(data_boolinger)
     })
+    
+    
+    #### Predictive Models
+    
+    ## BBands strategy
+    #Tables:
+    output$bbands_signal = renderDataTable({
+        
+        #Show signal table:
+        datatable(df_signal)
+    })
+    
+    #Optimal parameters BBands:
+    output$bbands_signal_opt = renderDataTable({
+        
+        #Show optimal parameters table:
+        datatable(df_opt) %>%
+            DT::formatPercentage(c("strategy_return", "buy_hold_return", "strategy_return_year", "buy_hold_return_year"),2)
+    })
+    
+    
+    
     
     # #Prediction data:
     # output$lstm_plot = renderPlotly({

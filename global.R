@@ -1,19 +1,8 @@
 #Global:
 
 # Used packages
-packages = c("shiny",
-            "shinydashboard",
-            "plotly",
-            "tidyverse",
-            "quantmod",
-            "DT",
-            "readr",
-            "dplyr",
-            "plotly",
-            "ggplot2",
-            "zoo",
-            "bizdays",
-            "tidyquant")
+packages = c("shiny", "shinydashboard", "tidyverse", "plotly", "dplyr","DT",
+            "zoo", "quantmod", "tidyquant", "readr","plotly","ggplot2","bizdays", "lubridate")
 
 # Run the following command to verify that the required packages are installed. If some package
 # is missing, it will be installed automatically
@@ -23,19 +12,43 @@ package.check <- lapply(packages, FUN = function(x) {
   }
 })
 
+# #Shiny
+# library(shiny)
+# library(shinydashboard)
+# library(shinydashboardPlus)
+# #Data manipulation
+# library(tidyverse)
+# library(dplyr)
+# library(DT)
+# library(zoo)
+# #Finance data:
+# library(quantmod)
+# # Modeling
+# library(tidyquant)
+# #Data import:
+# library(readr)
+# #Data viz:
+# library(plotly)
+# library(ggplot2)
+# #Calendar:
+# library(bizdays)
+# library(lubridate)
+
 #Get symbols:
 source("data/update_data.R")
-symbols = data.frame(read_csv("tickers/tickers.csv"))
+symbols = data.frame(read_csv("tickers.csv"))
 load("data/time_series.RData")
+load("data/bbands_signaling.RData")
 
 #Stock data
 func_data = function(raw_data, company){
   ticker = as.character(symbols[symbols$Company == company,]$Ticker)
+  ticker_clean = paste(str_extract_all(ticker, "[A-Z.0-9]")[[1]],collapse="")
   df = raw_data
   
-  df[,paste(ticker,".Close", sep = "")] = na.approx(df[,paste(ticker,".Close", sep = "")])
+  df[,paste(ticker_clean,".Close", sep = "")] = na.approx(df[,paste(ticker_clean,".Close", sep = "")])
   df$DailyReturns = 0
-  df = as.data.frame(df[,c(paste(ticker,".Close", sep = ""), "DailyReturns")])
+  df = as.data.frame(df[,c(paste(ticker_clean,".Close", sep = ""), "DailyReturns")])
   colnames(df) = c("Price", "DailyReturns")
   df[,"Date"] = as.Date(rownames(df), tz = "UTC")
   
@@ -56,16 +69,9 @@ func_data = function(raw_data, company){
   return(df)
 }
 
-company = "BNP Paribas"
-raw_data = time_series[[company]]
-
-data = func_data(raw_data, company)
-
-
-
 #Technical analysis data
-func_tech_data = function(raw_data, company){
-  ticker = as.character(symbols[symbols$Company == company,]$Ticker)
+func_tech_data = function(raw_data){
+  #ticker = as.character(symbols[symbols$Company == company,]$Ticker)
   df = as.data.frame(raw_data)
   colnames(df) = c("Open", "High", "Low", "Close", "Volume", "Adjusted")
   
@@ -203,6 +209,144 @@ func_plot_boolinger = function(data_boolinger){
   return(fig)
 }
 
+
+#Build BBands strategy
+#Build df_signal table
+df_signal = data.frame(
+  High = numeric(0),
+  Low  = numeric(0),
+  Close = numeric(0),
+  MA = numeric(0),
+  DOWN = numeric(0),
+  UP = numeric(0),
+  Recommendation = character(0))
+
+#Loop for each company in symbols
+for (company in symbols$Company){
+  
+  #Get optimal parameters:
+  optimum = bbands_signaling[[company]]
+  
+  n_MA = optimum$MA_opt
+  x_SD = optimum$SD_opt
+  
+  #Apply func_tech_data function
+  df = func_tech_data(time_series[[company]])
+  
+  #Remove NA
+  for (col in colnames(df)){
+    df[,col] = round(na.approx(df[,col]),4)
+  }
+  
+  #Get proper index
+  dates = rownames(df)
+  rownames(df) = seq(1,nrow(df))
+  
+  #Select useful columns to compute Boolinger-Bands
+  df = df[,c("High", "Low", "Close")]
+  
+  #Compute MA(n), MA(n)+ p * SD(n)
+  df =  cbind(df, BBands(df, n = n_MA, sd = x_SD)) %>% select(-pctB) %>% last()
+  #rownames(df) = dates
+  
+  #Round up to 4 decimals
+  for (col in colnames(df)){
+    df[,col] = round(df[,col],4)
+  }
+  
+  
+  #Set recommendation to ""
+  df$Recommendation = ""
+  
+  if (df$High >= df$up){
+    df$Recommendation = "SELL"
+  } else if (df$Low <= df$dn){
+    df$Recommendation = "BUY"
+  } else {
+    df$Recommendation = "HOLD"
+  }
+  
+  #Append company name
+  rownames(df) = company
+  
+  #Select columns in the right order
+  df = df %>% select(High, Low, Close, mavg, dn, up, Recommendation)
+  
+  #Set the same columns names as df_signal
+  colnames(df) = colnames(df_signal)
+  
+  #Append row to df_signal
+  df_signal = rbind(df_signal, df)
+}
+
+df_notif = cbind(df_signal, "company" = rownames(df_signal))
+df_notif = df_notif %>%
+  filter(Recommendation != "HOLD") %>%
+  mutate(icon = ifelse(Recommendation == "BUY", "arrow-circle-up", "arrow-circle-down")) %>%
+  mutate(status = ifelse(Recommendation == "BUY", "success", "danger"))
+
+
+#Build BBands Optimal parameters
+#Setting up the data frame
+df_opt = data.frame(
+  MA_opt = numeric(0),
+  SD_opt = numeric(0),
+  strategy_log_return = numeric(0),
+  buy_hold_log_return = numeric(0),
+  nb_years = numeric(0)
+)
+
+#Rounding up to 4 decimals
+for (company in symbols$Company){
+  
+  df = bbands_signaling[[company]]
+  df = df %>% select(c("MA_opt",
+                       "SD_opt",
+                       "strategy_log_return",
+                       "buy_hold_log_return"))
+  
+  for (col in colnames(df)){
+    df[,col] = round(df[,col],4)
+  }
+  
+  serie = time_series[[company]]
+  
+  
+  period = as.numeric(difftime(rownames(serie)[nrow(serie)],
+                               rownames(serie)[1], unit = "weeks")/52.25)
+  
+  df$nb_years = round(period,2)
+  
+  rownames(df) = company
+  
+  df_opt = rbind(df_opt, df)
+}
+
+#Get evolutions in percentages
+df_opt$strategy_log_return = exp(df_opt$strategy_log_return) - 1
+df_opt$buy_hold_log_return = exp(df_opt$buy_hold_log_return) - 1
+
+#Renaming log returns to returns
+df_opt = df_opt %>% rename("strategy_return" = "strategy_log_return",
+                           "buy_hold_return" = "buy_hold_log_return")
+
+# Annualized returns:
+
+df_opt = df_opt %>%
+  rownames_to_column("name") %>%
+  mutate(strategy_return_year = (1+strategy_return)^(1/nb_years) - 1,
+         buy_hold_return_year = (1+buy_hold_return)^(1/nb_years) - 1) %>% 
+  column_to_rownames("name")
+
+
+df_opt = df_opt[,c("MA_opt", "SD_opt", "strategy_return", "buy_hold_return",
+                   "strategy_return_year", "buy_hold_return_year", "nb_years")]
+
+# Write CSV file for python recommendation
+company = rownames(df_opt)
+df_opt_py = cbind(company, df_opt)
+write.csv(df_opt_py, file = "external_files/bbands.csv", row.names = FALSE)
+
 # data = func_data("Air Liquide")
 # data_macd = cbind(data, as.data.frame(MACD(data$Price)))
 # data_macd$diff = data_macd$macd - data_macd$signal 
@@ -259,3 +403,5 @@ func_plot_boolinger = function(data_boolinger){
 #     data$decrease_four_days[i] = 1
 #     }
 # }
+
+

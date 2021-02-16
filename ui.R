@@ -1,34 +1,10 @@
 #User Interface:
 
-#Shiny
-library(shiny)
-library(shinydashboard)
-# #Deeplearning
-# library(reticulate)
-# library(tensorflow)
-# library(keras)
-#Data manipulation
-library(tidyverse)
-library(dplyr)
-library(DT)
-library(zoo)
-#Finance data:
-library(quantmod)
-# Modeling
-library(tidyquant)
-#Data import:
-library(readr)
-#Data viz:
-library(plotly)
-library(ggplot2)
-#Calendar:
-library(bizdays)
-#tags$a("ANKH", icon("ankh"), "AM")
-# Define UI 
 dashboardPage(
     title = "ANKH Asset Management",
     skin = "black",
     dashboardHeader(title =  HTML(paste("ANKH", icon("ankh"), "Asset Management" )),
+                    dropdownMenuOutput("NotificationMenu"),
                     titleWidth = 300
                     ),   #Header of the dashboard, icon+title
     dashboardSidebar(
@@ -37,7 +13,7 @@ dashboardPage(
             
             #Stock Analysis Item
             menuItem("Stock Analysis", tabName = "stock_analysis", icon = icon("poll"),
-                selectInput("company", label = "Select company :", choices = symbols[,"Company"], multiple = FALSE),
+                selectInput("company", label = "Select company/index :", choices = symbols[,"Company"], multiple = FALSE),
                 menuSubItem("Stock market", tabName = "stocks", icon = icon("chart-line")),
                 menuSubItem("Data", tabName = "data", icon = icon("table")),
                 menuSubItem("Technical analysis", tabName = "technical", icon = icon("chart-area")),
@@ -45,8 +21,8 @@ dashboardPage(
                          dateRangeInput("RangeDateTech", "Date range:", weekstart = 1))),
             
             #Key Decision
-            menuItem("Key decisions", tabName = "key_decisions", icon = icon("key"),
-                        menuSubItem("Models", tabName = "models", icon = icon("buromobelexperte"))
+            menuItem("Predictive Models", tabName = "key_decisions", icon = icon("bezier-curve"),
+                        menuSubItem("BBands Signaling", tabName = "bbands_signaling", icon = icon("bootstrap"))
                         ),
             
             #Portfolio
@@ -61,9 +37,9 @@ dashboardPage(
             # First tab content
             tabItem(tabName = "stocks",
                         fluidRow(
-                            valueBoxOutput("last_quote", width = 4),
-                            box(dateInput("inDate", "Input date",weekstart = 1), width = 4),
-                            box(selectInput("scale", "Select scaling :", c("No scaling", "Logarithmic scaling")),width = 4),
+                            valueBoxOutput("last_quote", width = 6),
+                            box(dateInput("inDate", "Input date",weekstart = 1), width = 3),
+                            box(selectInput("scale", "Select scaling :", c("No scaling", "Logarithmic scaling")),width = 3),
                             tabBox(
                                 title = "Plots",
                                 tabPanel(title = "Stock", icon = icon("dollar-sign"), plotlyOutput("stock")),
@@ -116,8 +92,8 @@ dashboardPage(
                                     plotlyOutput("boolinger", height = 600),
                                     br(),
                                     fluidRow(
-                                        box(numericInput("nMA_bbands", label = "Number of periods for moving average:", value = 20, min = 1, max = 100), width = 6),
-                                        box(numericInput("nSD_bbands", label = "Number of standard deviations to use:", value = 2, min = 1, max = 100), width = 6)
+                                        box(numericInput("nMA_bbands", label = "Number of periods for moving average:", value = 0), width = 6),
+                                        box(numericInput("nSD_bbands", label = "Number of standard deviations to use:", value = 0), width = 6)
                                     ),
                                     fluidRow(box(selectInput("bool_scale", "Select scaling :", c("No scaling", "Logarithmic scaling")),width = 4))
                            )
@@ -126,6 +102,28 @@ dashboardPage(
                     #Last update
                     p("Last update", code(Sys.Date()))
                     ),
+            
+            #BBands signaling
+            
+            tabItem(tabName = "bbands_signaling",
+                    tabBox(title = "BBands Signaling",
+                           
+                           tabPanel(title = "Strategy",
+                                    dataTableOutput("bbands_signal"),
+                                    p("Last update", code(Sys.Date()))
+                                    ),
+                           
+                           tabPanel(title = "Optimal Parameters",
+                                    dataTableOutput("bbands_signal_opt"),
+                                    p("Last update", code(bbands_signaling[["last_update"]]))
+                                    )
+                           
+                           ,width = 12),
+                    p("----")
+                    
+                    
+                    
+                    ),
         
             #Contact tab item
             tabItem(tabName = "about",
@@ -133,7 +131,7 @@ dashboardPage(
                     p(a("Bruno Pilarczyk", href="https://www.linkedin.com/in/bruno-pilarczyk-042739143", target="_blank"), em(" | Data Scientist"), style = "font-size:25px"),
                     p("e-mail: bruno.plzk@gmail.com",style = "font-size:20px"),
                     p(a("Rudolph Rousseaux", href="https://www.linkedin.com/in/rudolph-rousseaux-42b258137/", target="_blank"), em(" | Portfolio Manager"),style = "font-size:25px"),
-                    p("e-mail: rudolph.rousseaux@gmail.com",style = "font-size:20px"),)
+                    p("e-mail: rudolph.rousseaux@gmail.com",style = "font-size:20px"))
             
             #, 
             # tabItem(tabName = "predictions",
