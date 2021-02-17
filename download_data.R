@@ -13,7 +13,7 @@ library(tidyquant)
 symbols = data.frame(read_csv("tickers.csv"))
 
 # Loading existing data
-load("data/time_series.RData")
+load("time_series.RData")
 
 # Not in function:
 "%notin%" = Negate("%in%")
@@ -40,7 +40,7 @@ for (company in new_companies){
   time_series[[company]] = data
 }
 time_series[["last_update"]] = Sys.Date()
-save(time_series, file = "data/time_series.RData")
+save(time_series, file = "time_series.RData")
 
 
 

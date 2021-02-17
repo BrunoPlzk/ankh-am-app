@@ -13,7 +13,7 @@ package.check <- lapply(packages, FUN = function(x) {
 })
 
 # Load time_series:
-load("data/time_series.RData")
+load("time_series.RData")
 symbols = data.frame(read_csv("tickers.csv"))
 
 #Update function
@@ -84,5 +84,5 @@ for (company in symbols$Company){
 }
 
 time_series[["last_update"]] = Sys.Date()
-save(time_series, file = "data/time_series.RData")
+save(time_series, file = "time_series.RData")
 rm(list = ls())

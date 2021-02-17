@@ -127,4 +127,4 @@ for (company in companies){
 
 bbands_signaling[["last_update"]] = Sys.Date()
 
-save(bbands_signaling, file = "data/bbands_signaling.RData")
+save(bbands_signaling, file = "bbands_signaling.RData")

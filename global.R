@@ -35,10 +35,10 @@ package.check <- lapply(packages, FUN = function(x) {
 # library(lubridate)
 
 #Get symbols:
-source("data/update_data.R")
+source("update_data.R")
 symbols = data.frame(read_csv("tickers.csv"))
-load("data/time_series.RData")
-load("data/bbands_signaling.RData")
+load("time_series.RData")
+load("bbands_signaling.RData")
 
 #Stock data
 func_data = function(raw_data, company){
@@ -345,7 +345,7 @@ df_opt = df_opt[,c("MA_opt", "SD_opt", "strategy_return", "buy_hold_return",
 # Write CSV file for python recommendation
 company = rownames(df_opt)
 df_opt_py = cbind(company, df_opt)
-write.csv(df_opt_py, file = "external_files/bbands.csv", row.names = FALSE)
+write.csv(df_opt_py, file = "bbands.csv", row.names = FALSE)
 
 # data = func_data("Air Liquide")
 # data_macd = cbind(data, as.data.frame(MACD(data$Price)))
