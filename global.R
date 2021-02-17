@@ -8,7 +8,7 @@ packages = c("shiny", "shinydashboard", "tidyverse", "plotly", "dplyr","DT",
 # is missing, it will be installed automatically
 package.check <- lapply(packages, FUN = function(x) {
   if (!require(x, character.only = TRUE)) {
-    install.packages(x, dependencies = TRUE)
+    install.packages(x)
   }
 })
 
