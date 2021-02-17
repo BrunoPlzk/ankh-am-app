@@ -1,0 +1,12 @@
+name: ankh-am-app
+title: ankh-am-app
+username:
+account: ankh-am
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 3285117
+bundleId: 4207784
+url: https://ankh-am.shinyapps.io/ankh-am-app/
+when: 1612998769.26062
+asMultiple: FALSE
+asStatic: FALSE
