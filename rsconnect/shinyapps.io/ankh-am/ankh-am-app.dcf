@@ -5,8 +5,8 @@ account: ankh-am
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 3285117
-bundleId: 4207784
+bundleId: 4457514
 url: https://ankh-am.shinyapps.io/ankh-am-app/
-when: 1612998769.26062
+when: 1618151391.8229
 asMultiple: FALSE
 asStatic: FALSE
