@@ -40,7 +40,7 @@ shinyServer(function(input, output, session) {
     
     tech_data = reactive({
         company = input$company
-        df = func_tech_data(raw_data())
+        df = func_tech_data(raw_data)
         
         #Return
         df

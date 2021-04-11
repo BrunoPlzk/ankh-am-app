@@ -12,33 +12,43 @@ package.check <- lapply(packages, FUN = function(x) {
   }
 })
 
-# #Shiny
-# library(shiny)
-# library(shinydashboard)
-# library(shinydashboardPlus)
-# #Data manipulation
-# library(tidyverse)
-# library(dplyr)
-# library(DT)
-# library(zoo)
-# #Finance data:
-# library(quantmod)
-# # Modeling
-# library(tidyquant)
-# #Data import:
-# library(readr)
-# #Data viz:
-# library(plotly)
-# library(ggplot2)
-# #Calendar:
-# library(bizdays)
-# library(lubridate)
+#Shiny
+library(shiny)
+library(shinydashboard)
+library(shinydashboardPlus)
+#Data manipulation
+library(tidyverse)
+library(dplyr)
+library(DT)
+library(zoo)
+#Finance data:
+library(quantmod)
+# Modeling
+library(tidyquant)
+#Data import:
+library(readr)
+#Data viz:
+library(plotly)
+library(ggplot2)
+#Calendar:
+library(bizdays)
+library(lubridate)
 
 #Get symbols:
 source("scripts/update_data.R")
 symbols = data.frame(read_csv("data/tickers.csv"))
 load("data/time_series.RData")
 load("data/bbands_signaling.RData")
+
+temp = list()
+
+for (name in names(time_series)){
+  if (class(time_series[[name]]) != "try-error"){
+    temp[[name]] = time_series[[name]]
+  }
+}
+
+time_series = temp
 
 #Stock data
 func_data = function(raw_data, company){
@@ -222,8 +232,8 @@ df_signal = data.frame(
   Recommendation = character(0))
 
 #Loop for each company in symbols
-for (company in symbols$Company){
-  
+for (company in names(time_series)){
+  print(paste("Optimum", company))
   #Get optimal parameters:
   optimum = bbands_signaling[[company]]
   
@@ -297,8 +307,8 @@ df_opt = data.frame(
 )
 
 #Rounding up to 4 decimals
-for (company in symbols$Company){
-  
+for (company in names(time_series)){
+  print(paste("BBands", company))
   df = bbands_signaling[[company]]
   df = df %>% select(c("MA_opt",
                        "SD_opt",

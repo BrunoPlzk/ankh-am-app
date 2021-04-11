@@ -12,7 +12,7 @@ bbands_signaling = list()
 MA = seq(10,35,1)
 SD = seq(2,5,0.1)
 
-companies = symbols$Company
+companies = names(time_series)
 
 for (company in companies){
 

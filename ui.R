@@ -1,5 +1,4 @@
 #User Interface:
-
 dashboardPage(
     title = "ANKH Asset Management",
     skin = "black",

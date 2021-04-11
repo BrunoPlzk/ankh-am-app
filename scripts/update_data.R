@@ -14,6 +14,7 @@ package.check <- lapply(packages, FUN = function(x) {
 
 # Load time_series:
 load("data/time_series.RData")
+load("data/last_update.RData")
 symbols = data.frame(read_csv("data/tickers.csv"))
 
 #Update function
@@ -74,7 +75,7 @@ update = function(company){
 }
 
 #Looping over all companies in symbols csv:
-for (company in symbols$Company){
+for (company in names(time_series)){
   
   data = try(update(company))
   
@@ -83,6 +84,7 @@ for (company in symbols$Company){
 
 }
 
-time_series[["last_update"]] = Sys.Date()
+last_update[["last_update"]] = Sys.Date()
+save(last_update, file = "data/last_update.RData")
 save(time_series, file = "data/time_series.RData")
 rm(list = ls())

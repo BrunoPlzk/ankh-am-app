@@ -12,19 +12,12 @@ library(tidyquant)
 #Getting symbols
 symbols = data.frame(read_csv("data/tickers.csv"))
 
-# Loading existing data
-load("data/time_series.RData")
-
 # Not in function:
 "%notin%" = Negate("%in%")
 
-# Existing companies:
-existing_companies = names(time_series)[names(time_series) != "last_update"]
+time_series = list()
+last_update = list()
 
-# New companies 
-new_companies = symbols %>% filter(Company %notin% existing_companies) %>% pull(Company)
-
-# "Error" companies
 func_raw_data = function(company){
   ticker = as.character(symbols[symbols$Company == company,]$Ticker)
   getSymbols(ticker, src="yahoo")
@@ -34,13 +27,17 @@ func_raw_data = function(company){
   return(df)
 }
 
-for (company in new_companies){
+for (company in symbols$Company){
+  try(
+  if (class(company) == "character"){
   print(paste("Downloading", company, "data..."))
   data = func_raw_data(company)
   time_series[[company]] = data
+  })
 }
-time_series[["last_update"]] = Sys.Date()
+last_update[["last_update"]] = Sys.Date()
 save(time_series, file = "data/time_series.RData")
+save(last_update, file = "data/last_update.RData")
 
 
 
